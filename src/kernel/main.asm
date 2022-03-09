@@ -1,63 +1,45 @@
-org 0x7C00
+org 0x0
 bits 16
 
 
- %define ENDL 0x0D, 0x0A
+%define ENDL 0x0D, 0x0A
 
 
 start:
-jmp main
-
-; Prints a string
-; Params
-
-
-puts:
-
-   push si
-   push ax
-
-
- .loop:
-  lodsb
-   or al, al,
-   jz .done
-
-   mov bh, 0
-   mov ah, 0x0e
-   int 0x10
-     jmp .loop
-.done:
- pop ax
- pop si
- ret
-
-main:
-
-   ;setup date segments
-   mov ax, 0    ; Can't write to ds/es directly
-   mov ds, ax
-   mov es, ax
-
-   ; setup stack
-   mov ss, ax
-   mov sp, 0x7C00
-
-
-   mov si, msg_welcome
-   call puts
-
-
-   hlt
+    ; print hello world message
+    mov si, msg_hello
+    call puts
 
 .halt:
+    cli
+    hlt
 
+;
+; Prints a string to the screen
+; Params:
+;   - ds:si points to string
+;
+puts:
+    ; save registers we will modify
+    push si
+    push ax
+    push bx
 
-  jmp .halt
+.loop:
+    lodsb               ; loads next character in al
+    or al, al           ; verify if next character is null?
+    jz .done
 
+    mov ah, 0x0E        ; call bios interrupt
+    mov bh, 0           ; set page number to 0
+    int 0x10
 
-  msg_welcome: db 'Welcome to NOS Noahs Operating System', ENDL, 0
+    jmp .loop
 
+.done:
+    pop bx
+    pop ax
+    pop si    
+    ret
 
-times 510-($-$$) db 0
-dw 0AA55h 
+msg_hello: db 'Hello world from KERNEL!', ENDL, 0
